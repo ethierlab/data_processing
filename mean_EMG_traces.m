@@ -28,7 +28,9 @@ function [EMGm, EMGsd] = mean_EMG_traces(data_array,EMG_vec,varargin)
 
 % defaults parameters
 params = struct('mode'         ,'raw', ...
-                'plot'         , true);
+                'plot'         , true,...
+                'HP'           ,50,...
+                'LP'           ,10);
 params = parse_input_params(params,varargin);
 
 %% EMG processing
@@ -60,9 +62,9 @@ for b = 1:num_blocks
                 [bh,ah] = butter(4, params.HP*2/EMG_fs, 'high'); %highpass filter params
                 [bl,al] = butter(4, params.LP*2/EMG_fs, 'low');  %lowpass filter params
         
-                tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
-                tempEMG = abs(tempEMG); %rectify
-                tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
+                tmp_emg = filtfilt(bh,ah,tmp_emg); %highpass filter
+                tmp_emg = abs(tmp_emg); %rectify
+                tmp_emg = filtfilt(bl,al,tmp_emg); %lowpass filter
             otherwise
                 error('unrecognised EMG processing mode');
         end

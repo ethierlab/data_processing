@@ -29,7 +29,7 @@ function EMG_response = mean_EMG_response(EMGs,timeframe,varargin)
 % defaults parameters
 params = struct('mode'         ,'rect', ...
                 'rem_baseline' ,false, ...
-                'window'      ,[0.002 0.010]);
+                'window'      ,[0.00 0.2]);
 
 params = parse_input_params(params,varargin);
 
