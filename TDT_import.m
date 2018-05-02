@@ -100,11 +100,8 @@ function varargout = TDT_import(varargin)
         % TODO: check file extension if it really looks like a data tank
         block = blocknames{f};
         
-        if ispc
-            tdt_struct = TDT2mat(fullfile(blockpath,block));
-        elseif ismac
-            tdt_struct = TDTbin2mat(fullfile(blockpath,block));
-        end
+        tdt_struct = TDTbin2mat(fullfile(blockpath,block));
+
    
         %name the structure the same as the file and save it.
         %but modify name to make sure it starts with a letter
