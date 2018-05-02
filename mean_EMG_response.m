@@ -19,7 +19,7 @@ function EMG_response = mean_EMG_response(EMGs,timeframe,varargin)
 %           'rem_baseline' :  [false] logic flag indicating whether to remove the average baseline
 %                             EMG prior to stim onset from measured EMG response
 %
-%           'window'       :  [0.002 0.010] two-element vector to delimit the EMG response analysis time window (in seconds)
+%           'window'       :  [0 0.2] two-element vector to delimit the EMG response analysis time window (in seconds)
 %
 %
 %%%% Ethierlab 2018/01 -- CE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

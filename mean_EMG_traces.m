@@ -2,8 +2,8 @@ function [EMGm, EMGsd] = mean_EMG_traces(data_array,EMG_vec,varargin)
 %
 % usage: mEMG = mean_EMG_trace(data_array,EMG_vec,[params])
 %
-%  This function averages the mean EMG signals specified in EMG_vec for each data structure present in the first column of the cell array matdata_array.
-%  It returns the average EMG traces for each data structure plots them all if the "plot_flag" optional argument is true.
+%  This function averages the mean EMG signals specified in EMG_vec for each data structure present in the first column of the cell array data_array.
+%  It returns the average EMG traces for each data structure and plots them all if the "plot_flag" optional argument is true.
 %
 %   inputs:
 %       data_array  :  cell array of data structure, as provided by parse_tdt_data.m
@@ -16,7 +16,7 @@ function [EMGm, EMGsd] = mean_EMG_traces(data_array,EMG_vec,varargin)
 %           'mode'  :  [raw],  either 'raw' or 'rect'.
 %                             'raw' : averages unrectified raw EMG data
 %                             'rect': rectifies and filters the EMG signal (hp 50Hz, rect, lp 20Hz)
-%           'HP','LP': [50 10]  high pass and low pass cut off frequencies for EMG filtering
+%           'HP','LP': [50 20]  high pass and low pass cut off frequencies for EMG filtering
 %
 %   outputs:
 %       EMGm        :  averaged EMG traces
@@ -30,7 +30,7 @@ function [EMGm, EMGsd] = mean_EMG_traces(data_array,EMG_vec,varargin)
 params = struct('mode'         ,'raw', ...
                 'plot'         , true,...
                 'HP'           ,50,...
-                'LP'           ,10);
+                'LP'           ,20);
 params = parse_input_params(params,varargin);
 
 %% EMG processing
