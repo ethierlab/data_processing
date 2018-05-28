@@ -109,11 +109,17 @@ function varargout = TDT_import(varargin)
         block = ['m' strrep(block,'-','')];   
         eval([block '= tdt_struct;']);
         
+        % check if there is a mismatch between stim epocs onsets and snips ts
+        % also creates a "timeframe" variable in snips, relative to stim epocs
+        tdt_struct = fix_snips_epocs_mismatch(tdt_struct);
+        
         matdata(f,:) = [ {tdt_struct}, {block} ];
+        
         
         save(fullfile(params.save_path,block),block);
         
     end
+    save(fullfile(params.save_path,'all_data_combined'),'matdata');
     
     if strcmp(params.format,'parse')
         matdata = parse_tdt_data(matdata,params.parse_params);
