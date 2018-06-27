@@ -30,7 +30,7 @@ for c = 1:num_chan
     chan_data{c}    = LC_data.data(idx);
     % find channel types
     emg_chans(c)    = ~isempty(strfind(lower(LC_data.titles(c,:)),'emg'));
-    cx_stim_chan(c) = ~isempty(strfind(lower(LC_data.titles(c,:)),'cx stim'));
+    cx_stim_chan(c) = ~isempty(strfind(lower(LC_data.titles(c,:)),'cx'));
     % add more channel type extraction here when needed
 end
 
