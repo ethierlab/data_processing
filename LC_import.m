@@ -53,7 +53,9 @@ if ~num_data_files
     varargout = {[],[],[]};
     return;
 end
-    
+
+[~,index] = sortrows({LC_mat_files.date}.'); LC_mat_files = LC_mat_files(index); clear index
+
 blocknames = {LC_mat_files.name};
 
 matdata = cell(num_data_files,2);
@@ -90,7 +92,6 @@ for f = 1:num_data_files
     eval([block '= ELF_struct;']);
        
     matdata(f,:) = [ {ELF_struct}, {block} ];
-    
     
     save(fullfile(params.save_path,block),block);
     
