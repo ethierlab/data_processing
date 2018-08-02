@@ -16,7 +16,7 @@ function binnedData = convertMDF2binned(datatable,varargin)
 %             HP, LP              : [50 10]  high pass and low pass cut off frequencies for EMG filtering
 %             diff_lfp            : [true]   differentiate LFPs using electrodes pairs in different 'columns'
 %             diff_mapping        : []       electrode mapping for differential LFP, empty for default (see diff_LFP.m)
-%             norm_lfp            : [false]  specify whether raw LFPs are to be normalized in amplitude, using the 99th percentile (to avoid squashing the signal in case there is a big artifact)
+%             NormLFP             : [false]  specify whether raw LFPs are to be normalized in amplitude, using the 99th percentile (
 %             ArtRemEnable        : [false]  Whether or not to attempt detecting and deleting artifacts
 %             NumChan             : [10]     Number of channels from which the artifact removal needs to detect simultaneous spikes to consider it an artifact
 %             TimeWind            : [0.0005] time window, in seconds, over which the artifact remover will consider event to be "simultaneous"
@@ -44,7 +44,7 @@ params = struct(...
     'LP'            , 10,...
     'diff_lfp'      , true,...
     'diff_mapping'  , [],...
-    'norm_lfp'      , true,...
+    'NormLFP'       , true,...
     'ArtRemEnable'  , false,...
     'NumChan'       , 10,...
     'TimeWind'      , 0.0005);
@@ -87,23 +87,13 @@ end
     num_force  = length(force_fs);
     num_units  = length(units_i);
     num_LFP    = length(LFP_i);
-    if process_data_flag(strcmp(data_types,'LFP'))
-        norm_lfp_ratio = ones(1,num_LFP);
-        if params.norm_lfp
-            for l = 1:num_LFP
-                % for each raw lfp signal, find the 99th percentile of the absolute value of the lfp signal accross all trials
-                norm_lfp_ratio(l) = prctile(abs([datatable{LFP_i(l),:}{:}]),99);
-            end
-        end
-        if params.diff_lfp
-            if ~isempty(params.diff_mapping)
-                num_LFP = size(params.diff_mapping,1);
-            else
-                num_LFP = num_LFP/2; %default is row-wise differential of all LFP signals
-            end
+    if params.diff_lfp
+        if ~isempty(params.diff_mapping)
+            num_LFP = size(params.diff_mapping,1);
+        else
+            num_LFP = num_LFP/2; %default is row-wise differential of all LFP signals
         end
     end
-        
     trial_type = cell(num_trials,1);
     trial_time = cell(num_trials,1);
     success    = cell(num_trials,1);
@@ -114,9 +104,6 @@ end
     force   = cell(num_trials,num_force);
     spikes  = cell(num_trials,num_units);
     rawLFP  = cell(num_trials,num_LFP);
-    delta   = cell(num_trials,num_LFP);
-    theta   = cell(num_trials,num_LFP);
-    alpha   = cell(num_trials,num_LFP);
     beta    = cell(num_trials,num_LFP);
     lgamma  = cell(num_trials,num_LFP);
     hgamma  = cell(num_trials,num_LFP);
@@ -129,7 +116,7 @@ end
     
 %%  Trial per trial, extract and bin all data into new cells
 
- for trial = 1:num_trials
+for trial = 1:num_trials
     
     %use first force signal to infer duration and timeframe for this trial
     num_points       = numel(datatable{force_i(1),trial}{:});
@@ -141,7 +128,6 @@ end
     if process_data_flag(strcmp(data_types,'trial_type'))
        trial_type{trial} = datatable{trial_type_i(1),trial}{:};
     end
-    
  
     %% 2-Bin EMG data
     if process_data_flag(strcmp(data_types,'EMG'))     
@@ -172,7 +158,6 @@ end
 
     %% 4-Bin spike data
             %todo: separate single vs multiunits
-            %todo: remove artifacts based on coincidence and params (find my code for that)
     if process_data_flag(strcmp(data_types,'spike'))
         for S = 1:num_units
             ts = datatable{units_i(S),trial}{:}/units_fs;
@@ -187,12 +172,6 @@ end
         rawLFPtimebins = (0:numel(datatable{LFP_i(1),trial}{:})-1)/LFP_fs;
         
         LFPs = datatable{LFP_i,trial};
-        if params.norm_lfp
-            for L = 1:length(LFPs)
-                LFPs{L} = LFPs{L}/norm_lfp_ratio(L);
-            end
-        end
-        
         if params.diff_lfp
             LFPs = diff_LFP(LFPs);
         end
@@ -200,9 +179,6 @@ end
         
         for L = 1:num_LFP
             rawLFP{trial,L}  = interp1(rawLFPtimebins      , LFPs.rawLFP{L}  , timeframe{trial},'linear','extrap')';
-            delta{trial,L}   = interp1(processedLFPtimebins, LFPs.delta{L}   , timeframe{trial},'linear','extrap')';
-            theta{trial,L}   = interp1(processedLFPtimebins, LFPs.theta{L}   , timeframe{trial},'linear','extrap')';
-            alpha{trial,L}   = interp1(processedLFPtimebins, LFPs.alpha{L}   , timeframe{trial},'linear','extrap')';
             beta{trial,L}    = interp1(processedLFPtimebins, LFPs.beta{L}    , timeframe{trial},'linear','extrap')';
             lgamma{trial,L}  = interp1(processedLFPtimebins, LFPs.lgamma{L}  , timeframe{trial},'linear','extrap')';
             hgamma{trial,L}  = interp1(processedLFPtimebins, LFPs.hgamma{L}  , timeframe{trial},'linear','extrap')';
@@ -225,7 +201,7 @@ end
 end
 
 %% Outputs
-binnedData = table(timeframe, trial_type, trial_time, success, emg, force, spikes, rawLFP, delta, theta, alpha, beta, lgamma, hgamma, vhgamma);
+binnedData = table(timeframe, trial_type, trial_time, success, emg, force, spikes, rawLFP, beta, lgamma, hgamma, vhgamma);
 binnedData = binnedData(:,[true process_data_flag]);
         
 end
