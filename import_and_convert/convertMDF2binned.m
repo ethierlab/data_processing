@@ -16,7 +16,7 @@ function binnedData = convertMDF2binned(datatable,varargin)
 %             HP, LP              : [50 10]  high pass and low pass cut off frequencies for EMG filtering
 %             diff_lfp            : [true]   differentiate LFPs using electrodes pairs in different 'columns'
 %             diff_mapping        : []       electrode mapping for differential LFP, empty for default (see diff_LFP.m)
-%             norm_lfp            : [false]  specify whether raw LFPs are to be normalized in amplitude, using the 99th percentile (to avoid squashing the signal in case there is a big artifact)
+%             norm_lfp            : [true]  specify whether raw LFPs are to be normalized in amplitude, using the 99th percentile (to avoid squashing the signal in case there is a big artifact)
 %             ArtRemEnable        : [false]  Whether or not to attempt detecting and deleting artifacts
 %             NumChan             : [10]     Number of channels from which the artifact removal needs to detect simultaneous spikes to consider it an artifact
 %             TimeWind            : [0.0005] time window, in seconds, over which the artifact remover will consider event to be "simultaneous"
