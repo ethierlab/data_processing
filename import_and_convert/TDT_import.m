@@ -86,7 +86,8 @@ function varargout = TDT_import(varargin)
     %save folder:
     if isempty(params.save_path)
         disp('Where do you want the mat files to be saved');
-        params.save_path = uigetdir('','Where do you want the mat files to be saved');
+        params.save_path = params.load_path;
+        params.save_path = uigetdir(params.save_path,'Where do you want the mat files to be saved');
         if ~params.save_path
             %user pressed cancel
             varargout = {[],[],[]};
@@ -111,19 +112,27 @@ function varargout = TDT_import(varargin)
         
         % check if there is a mismatch between stim epocs onsets and snips ts
         % also creates a "timeframe" variable in snips, relative to stim epocs
-        tdt_struct = fix_snips_epocs_mismatch(tdt_struct);
+        if isfield(tdt_struct.epocs, 'Stim')
+            % check if there is a stim structure...
+            tdt_struct = fix_snips_epocs_mismatch(tdt_struct);
+        end
         
         matdata(f,:) = [ {tdt_struct}, {block} ];
+        clear tdt_struct;
         
-        
-        save(fullfile(params.save_path,block),block);
+        save(fullfile(params.save_path,block),block,'-v7.3');
         
     end
-    save(fullfile(params.save_path,'all_data_combined'),'matdata');
-    
+        
     if strcmp(params.format,'parse')
         matdata = parse_tdt_data(matdata,params.parse_params);
     end
     
+    if num_data_files > 1
+        save(fullfile(params.save_path,'all_data_combined'),'matdata','-v7.3');
+    else
+        matdata = matdata{1,1};
+    end
+
     varargout = {matdata, num_data_files, params.save_path};
 end
