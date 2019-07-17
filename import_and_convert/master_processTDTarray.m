@@ -12,6 +12,12 @@
 
 BLOCKPATH = uigetdir('/Users/christianethier/Google Drive (Work)/Projects/Chronic Array and Mototrak/sample data/jados-19-04-30-am','Select TDT data block');
 
+% read file info:
+heads = TDTbin2mat(BLOCKPATH, 'HEADERS', 1);
+
+
+
+
 % initial threshold value
 THRESH  = -80e-6; % 
 NPTS    = 40; %1.6ms snippets

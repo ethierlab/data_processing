@@ -1,9 +1,21 @@
-function su = cleanup_spikes(su)
+function su = cleanup_spikes(su,varargin)
 % so far this assumes 40 pts per snip, only 1 channel in data
 % parameters are hardcoded and should be made parameterized and provided as input to function
 % todo: also look at number of channels?
 % overall: make more user friendly and robust
 % use time relative to threshold crossing instead of bin number
+
+
+% defaults parameters
+params = struct( ...
+    'presnip_wind'     ,100,    ...
+    'presnip_t'        ,[0 5] , ...
+    'postsnip_thresh'  ,0     , ...
+    'postsnip_t1'      ,[20 25],...
+    'postsnip_wind'    ,150   , ...
+    'postsnip_t2'      ,[30 40] );
+
+params = parse_input_params(params,varargin);
 
 num_snips = size(su.snips.Snip.data,1);
 num_chans = size(su.snips.Snip.data,2);
