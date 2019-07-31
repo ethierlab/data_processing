@@ -46,13 +46,15 @@ function varargout = TDT_import(varargin)
             return
         end
     end
+    
     if params.load_path(end) == filesep
         params.load_path = params.load_path(1:end-1);
     end
+    
     data_dir = dir(params.load_path);
     
     if isempty(data_dir)
-        warning('empty_directory');
+        warning('empty directory');
         varargout = {[],[],[]};
         return;
     end
