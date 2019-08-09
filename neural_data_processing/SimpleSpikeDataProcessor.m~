@@ -22,7 +22,7 @@ function varargout = SimpleSpikeDataProcessor(varargin)
 
 % Edit the above text to modify the response to help SimpleSpikeDataProcessor
 
-% Last Modified by GUIDE v2.5 09-Aug-2019 15:18:53
+% Last Modified by GUIDE v2.5 09-Aug-2019 11:38:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -112,11 +112,22 @@ if BLOCKPATH
         % get block info
         heads = TDTbin2mat(BLOCKPATH, 'HEADERS', 1);
         
-        if ~isfield(heads.stores,handles.store)
-            warning('no "%s" stream store detected in file!',handles.store);
-            disp('availabe stores are:');
-            heads.stores
+        all_stores = fieldnames(heads.stores);
+        strcmp(heads.stores.(all_stores{i}).typeStr,'streams');
+        
+        if isfield(heads.stores,handles.store)
+        
+        stream_strs = zeros(size(all_stores));
+        for i=1:size(all_stores,1)
+            stream_strs(i) = strcmp(heads.stores.(all_stores{i}).typeStr,'streams');
+        end   
+        
+        if ~sum(stream_strs)
+            warning('no stream store in detected in file!');
             return;
+        elseif sum(stream_strs)>1
+            warning('more than one stream store detected in file');
+            
         end
         
         handles.chanlist    = sort(unique(heads.stores.(handles.store).chan));
@@ -402,7 +413,7 @@ function handles = read_chan(handles)
 handles.data = TDTbin2mat(handles.blockpath_edit.String, 'STORE', handles.store, 'CHANNEL', handles.chan);
 
 % filter data 300-5000 Hz
-handles.data = TDTdigitalfilter(handles.data, handles.store, [300 5000]);
+% handles.data = TDTdigitalfilter(handles.data, handles.store, [300 5000]);
 
 % convert to uV
 handles.data.streams.(handles.store).data = handles.data.streams.(handles.store).data *1e6;
@@ -619,21 +630,3 @@ function store_name_edit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
-% --- Executes on button press in raw_data_radio.
-function raw_data_radio_Callback(hObject, eventdata, handles)
-% hObject    handle to raw_data_radio (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of raw_data_radio
-
-
-% --- Executes on button press in snips_only_radio.
-function snips_only_radio_Callback(hObject, eventdata, handles)
-% hObject    handle to snips_only_radio (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of snips_only_radio
