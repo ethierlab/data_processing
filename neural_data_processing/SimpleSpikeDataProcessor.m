@@ -22,7 +22,7 @@ function varargout = SimpleSpikeDataProcessor(varargin)
 
 % Edit the above text to modify the response to help SimpleSpikeDataProcessor
 
-% Last Modified by GUIDE v2.5 09-Aug-2019 15:18:53
+% Last Modified by GUIDE v2.5 12-Aug-2019 11:16:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -75,7 +75,9 @@ handles.numsnips     = 1000; % plot 1000 snips max
 
 handles.data     = [];
 
-handles.store    = handles.store_name_edit.String;
+handles.store    = {'-- Select storage --'};
+
+handles.all_channels_checkbox_value = get(handles.all_channels_checkbox,'Value');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -112,24 +114,18 @@ if BLOCKPATH
         % get block info
         heads = TDTbin2mat(BLOCKPATH, 'HEADERS', 1);
         
-        if ~isfield(heads.stores,handles.store)
-            warning('no "%s" stream store detected in file!',handles.store);
-            disp('availabe stores are:');
-            heads.stores
-            return;
+        heads_fieldnames = fieldnames(heads.stores);
+        
+        for i = 1:length(fieldnames(heads.stores))
+            handles.store{i+1,1} = heads_fieldnames{i,1};
         end
-        
-        handles.chanlist    = sort(unique(heads.stores.(handles.store).chan));
-        handles.numchan     = length(handles.chanlist);
-        handles.chan        = handles.chanlist(1);
-        handles.stream_t0   = 0; % start at beginning of data (first 60 sec);
-        
-        % read data from first channel
-        handles = read_chan(handles);
-        
+%         stream_snip = heads.stores
+%         handles.store = stream_snip(handles.store);
+        set(handles.list_popup,'String',string(handles.store));
     end
 end
 
+cd(BLOCKPATH)
 % Update handles structure
 guidata(hObject, handles);
 
@@ -138,7 +134,7 @@ handles = extract_snips(handles);
 update_snips(handles);
 
 num_snips = size(handles.data.snips.Snip.data,1);
-fprintf('Extracted %d snips\n',num_snips);
+fprintf('Extracted %d snips from ch %d\n',num_snips,handles.chan);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -224,32 +220,70 @@ update_snips(handles);
 guidata(hObject, handles);
 
 function apply_all_button_Callback(hObject, eventdata, handles)
-% thresholding
-handles = extract_snips(handles);
-num_snips = size(handles.data.snips.Snip.data,1);
-fprintf('Extracted %d snips\n',num_snips);
 
-% remove snips above reject line
-rem_idx = find(any(abs(handles.data.snips.Snip.data') > handles.reject));
-
-% remove snips when outside presnip window
-rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.presnipT(1):handles.presnipT(2)))' > handles.presnip))];
-
-% remove snips when below postsnip threshold
-rem_idx = [rem_idx find(any(handles.data.snips.Snip.data(:,handles.postsnipT(1):handles.postsnipT(2))' < handles.postsnip))];
-
-% remove snips when outside postsnip window
-rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.postwindT(1):handles.postwindT(2)))' > handles.postwind))];
-
-rem_idx = unique(rem_idx);
-
-% actually remove all relevant snips
-handles.data.snips.Snip.data(rem_idx,:)     = [];
-handles.data.snips.Snip.sortcode(rem_idx,:) = [];
-handles.data.snips.Snip.ts(rem_idx,:)       = [];
-
-fprintf('Removed %d of %d snips\n',length(rem_idx),num_snips);
-update_snips(handles);
+    if handles.all_channels_checkbox_value == 1
+        for i = 1:length(handles.chanlist)
+            handles.chan = handles.chanlist(i);
+            handles.stream_t0 = 0;
+            handles = read_chan(handles);
+            
+            % thresholding
+            handles = extract_snips(handles);
+            num_snips = size(handles.data.snips.Snip.data,1);
+            fprintf('Extracted %d snips from ch %d\n',num_snips,handles.chan);
+            
+            % remove snips above reject line
+            rem_idx = find(any(abs(handles.data.snips.Snip.data') > handles.reject));
+            
+            % remove snips when outside presnip window
+            rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.presnipT(1):handles.presnipT(2)))' > handles.presnip))];
+            
+            % remove snips when below postsnip threshold
+            rem_idx = [rem_idx find(any(handles.data.snips.Snip.data(:,handles.postsnipT(1):handles.postsnipT(2))' < handles.postsnip))];
+            
+            % remove snips when outside postsnip window
+            rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.postwindT(1):handles.postwindT(2)))' > handles.postwind))];
+            
+            rem_idx = unique(rem_idx);
+            
+            % actually remove all relevant snips
+            handles.data.snips.Snip.data(rem_idx,:)     = [];
+            handles.data.snips.Snip.sortcode(rem_idx,:) = [];
+            handles.data.snips.Snip.ts(rem_idx,:)       = [];
+        
+            fprintf('Removed %d of %d snips from ch %d\n',length(rem_idx),num_snips,handles.chan);
+            update_snips(handles);
+            save_chan(handles);
+            set(handles.all_channels_checkbox,'Value',0);
+        end
+    else 
+        % thresholding
+        handles = extract_snips(handles);
+        num_snips = size(handles.data.snips.Snip.data,1);
+        fprintf('Extracted %d snips from ch %d\n',num_snips,handles.chan);
+        
+        % remove snips above reject line
+        rem_idx = find(any(abs(handles.data.snips.Snip.data') > handles.reject));
+        
+        % remove snips when outside presnip window
+        rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.presnipT(1):handles.presnipT(2)))' > handles.presnip))];
+        
+        % remove snips when below postsnip threshold
+        rem_idx = [rem_idx find(any(handles.data.snips.Snip.data(:,handles.postsnipT(1):handles.postsnipT(2))' < handles.postsnip))];
+        
+        % remove snips when outside postsnip window
+        rem_idx = [rem_idx find(any(abs(handles.data.snips.Snip.data(:,handles.postwindT(1):handles.postwindT(2)))' > handles.postwind))];
+        
+        rem_idx = unique(rem_idx);
+        
+        % actually remove all relevant snips
+        handles.data.snips.Snip.data(rem_idx,:)     = [];
+        handles.data.snips.Snip.sortcode(rem_idx,:) = [];
+        handles.data.snips.Snip.ts(rem_idx,:)       = [];
+        
+        fprintf('Removed %d of %d snips from ch %d\n',length(rem_idx),num_snips,handles.chan);
+        update_snips(handles);
+    end
 
 % Update handles structure
 guidata(hObject, handles);
@@ -295,8 +329,6 @@ else
         
 end
 
-function done_button_Callback(hObject, eventdata, handles)
-
 function prev_chan_button_Callback(hObject, eventdata, handles)
 
 % save snips from current channel
@@ -336,7 +368,7 @@ function update_stream(handles)
 set(handles.figure1,'CurrentAxes',handles.stream_axes);
 
 % select and plot relevant data and timeframe
-yvals = handles.data.streams.(handles.store).data( handles.stream_timeframe >= handles.stream_t0 & handles.stream_timeframe < handles.stream_t0 + handles.stream_width);
+yvals = handles.data.streams.(handles.list_choice).data( handles.stream_timeframe >= handles.stream_t0 & handles.stream_timeframe < handles.stream_t0 + handles.stream_width);
 xvals = handles.stream_timeframe( handles.stream_timeframe >= handles.stream_t0 & handles.stream_timeframe < handles.stream_t0 + handles.stream_width);
 
 cla(handles.stream_axes);
@@ -373,7 +405,7 @@ else
 end
 hold on; axis manual
 xlim([handles.snips_timeframe(1) handles.snips_timeframe(end)]);
-ylabel('uV'); xlabel('ms'); title(sprintf('first %d snips',numsnips));
+ylabel('uV'); xlabel('ms'); title(sprintf('First %d snips',numsnips));
 
 % if big artifacts, auto scale zooms out too much to see real data. Set a max yrange of +- 500 uV
 yy = ylim;  ylim([max(-500,yy(1)) min(500,yy(2))]);
@@ -399,22 +431,22 @@ plot(handles.snips_axes,[handles.snips_timeframe(1) handles.snips_timeframe(end)
 function handles = read_chan(handles)
 
 % read the specified data from our block into a Matlab structure
-handles.data = TDTbin2mat(handles.blockpath_edit.String, 'STORE', handles.store, 'CHANNEL', handles.chan);
+handles.data = TDTbin2mat(handles.blockpath_edit.String, 'STORE', handles.list_choice, 'CHANNEL', handles.chan);
 
 % filter data 300-5000 Hz
-handles.data = TDTdigitalfilter(handles.data, handles.store, [300 5000]);
+handles.data = TDTdigitalfilter(handles.data, handles.list_choice, [300 5000]);
 
 % convert to uV
-handles.data.streams.(handles.store).data = handles.data.streams.(handles.store).data *1e6;
+handles.data.streams.(handles.list_choice).data = handles.data.streams.(handles.list_choice).data *1e6;
 
-handles.stream_timeframe = ((1:length(handles.data.streams.(handles.store).data))-1)/handles.data.streams.(handles.store).fs;
+handles.stream_timeframe = ((1:length(handles.data.streams.(handles.list_choice).data))-1)/handles.data.streams.(handles.list_choice).fs;
 
 % per TDTthresh:
 %pre_wave = floor(NPTS/4)-1;
 %post_wave = NPTS - pre_wave-1;
 pre_wave = floor(handles.snip_width/4);
 post_wave = handles.snip_width-pre_wave-1;
-handles.snips_timeframe  = (-pre_wave:post_wave)/handles.data.streams.(handles.store).fs*1e3; % in ms
+handles.snips_timeframe  = (-pre_wave:post_wave)/handles.data.streams.(handles.list_choice).fs*1e3; % in ms
 
 % enable/disable buttons
 if handles.chan == handles.chanlist(1)
@@ -428,7 +460,7 @@ else
     handles.next_chan_button.Enable = 'on';
 end
 
-saved_snips      = ~isempty(dir([handles.blockpath_edit.String filesep 'chandata' filesep 'ch' num2str(handles.chan) '_snips.mat']));
+saved_snips = ~isempty(dir([handles.blockpath_edit.String filesep 'chandata' filesep 'ch' num2str(handles.chan) '_snips.mat']));
 
 % load saved snips if already processed 
 if saved_snips
@@ -436,7 +468,7 @@ if saved_snips
 else
     handles = extract_snips(handles);
     num_snips = size(handles.data.snips.Snip.data,1);
-    fprintf('Extracted %d snips\n',num_snips);
+    fprintf('Extracted %d snips from ch %d\n',num_snips,handles.chan);
 end
 
 snips_compat = length(handles.snips_timeframe) == size(handles.data.snips.Snip.data,2);
@@ -452,10 +484,10 @@ update_snips(handles);
 function handles = extract_snips(handles)
 
 % extract snips using specified parameters
-handles.data = TDTthresh(handles.data, handles.store, 'MODE', 'manual', 'THRESH', handles.thresh, 'NPTS', handles.snip_width, 'OVERLAP', 0,'VERBOSE',0);
+handles.data = TDTthresh(handles.data, handles.list_choice, 'MODE', 'manual', 'THRESH', handles.thresh, 'NPTS', handles.snip_width, 'OVERLAP', 0,'VERBOSE',0);
 
 %TDT thresh simply writes '1' in Snip.chan when only one channel at a time. We want that to reflect the real channel number
-handles.data.snips.Snip.chan = handles.data.streams.(handles.store).channel;
+handles.data.snips.Snip.chan = handles.data.streams.(handles.list_choice).channel;
 
 function Snip = mergeSnips(s,Snip)
 if isempty(Snip)
@@ -504,6 +536,7 @@ update_snips(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
 function thresh_edit_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to thresh_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -523,6 +556,7 @@ update_snips(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
 function reject_edit_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to reject_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -542,6 +576,7 @@ update_snips(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
 function pre_snip_edit_CreateFcn(hObject, eventdata, handles)
 
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
@@ -575,6 +610,7 @@ update_snips(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
 function post_snip_thresh_edit_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to post_snip_thresh_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -589,28 +625,6 @@ end
 function blockpath_edit_Callback(hObject, eventdata, handles)
 function blockpath_edit_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to blockpath_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function store_name_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to store_name_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-handles.store = get(hObject,'String');
-guidata(hObject, handles);
-
-
-% --- Executes during object creation, after setting all properties.
-function store_name_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to store_name_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -637,3 +651,72 @@ function snips_only_radio_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of snips_only_radio
+
+
+%% Added -VK 11/08/2019
+% Adds popup menu with drop down list of available stores and load
+% selected option
+
+% --- Executes on selection change in list_popup.
+function list_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to list_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns list_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from list_popup
+
+list_contents =   get(handles.list_popup,'String');
+handles.list_choice = list_contents{get(handles.list_popup,'Value')};
+
+heads = TDTbin2mat(handles.blockpath_edit.String, 'HEADERS', 1);
+
+handles.chanlist    = sort(unique(heads.stores.(handles.list_choice).chan));
+handles.numchan     = length(handles.chanlist);
+handles.chan        = handles.chanlist(1);
+handles.stream_t0   = 0; % start at beginning of data (first 60 sec);
+
+% read data from first channel
+fprintf('Loading %s...\n', handles.list_choice)
+
+try
+handles = read_chan(handles);
+catch
+    warning('Failed to load %s. Select a different storage.\n', handles.list_choice)
+    return
+end
+
+fprintf('%s loaded successfully.\n', handles.list_choice)
+
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function list_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to list_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% Checkbox for applying settings to all channels
+% --- Executes on button press in all_channels_checkbox.
+function all_channels_checkbox_Callback(hObject, eventdata, handles)
+% hObject    handle to all_channels_checkbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of all_channels_checkbox
+
+handles.all_channels_checkbox_value = get(handles.all_channels_checkbox,'Value');
+
+% Update handles structure
+guidata(hObject, handles);
+
+%% End of code %%
+
+
