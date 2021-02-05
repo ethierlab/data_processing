@@ -43,12 +43,15 @@ for e = 1:nEMGs
     %loop individual channels to extract data from cell array to 2D-matrix
     tmp_emg = vertcat(EMGs{:,e});
     
-    % 0 - filter... Todo
+    % 1 - filter
     
-    % 1- average accross rows (repeated stim values)
+        %1.1 high-pass at 50Hz
+        tmp_emg = high
+    
+    % 2 - average accross rows (repeated stim values)
     tmp_emg = mean(tmp_emg,1);
     
-    % 2- measure response
+    % 3 - measure response
     %extract data over time window
     tmp_emg =  tmp_emg(timeframe>=params.window(1) & timeframe<=params.window(2));
     
