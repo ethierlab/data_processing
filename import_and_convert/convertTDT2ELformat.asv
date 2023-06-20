@@ -76,32 +76,31 @@ for b = 1:num_blocks
     num_chan    = length(chan_list);
     num_bins    = size(snips.data,2);
     
-    sys_time_delay = pz5_delay(params.pz5_fs,params.snip_gizmo_level);
-    
-    % create timeframe
-    bin_dur   = double(1/snips.fs);
-    timeframe = 0:bin_dur:(num_bins-1)*bin_dur;
-    timeframe = timeframe - params.snip_offset - sys_time_delay;
+%     sys_time_delay = pz5_delay(params.pz5_fs,params.snip_gizmo_level);
+%     
+%     % create timeframe
+%     bin_dur   = double(1/snips.fs);
+%     timeframe = 0:bin_dur:(num_bins-1)*bin_dur;
+%     timeframe = timeframe - params.snip_offset - sys_time_delay;
 
     % extract data, one column per channel
-    snips_array = cell(1,num_chan);
-    sort_code   = cell(1,num_chan);
+    snips_array = cell(num_snips,num_chan);
+    sort_code   = nan(num_snips,num_chan);
     chan_list_sort = sort(chan_list)';
     for c = 1:num_chan
-%         snips_array(:,c) = mat2cell(double(snips.data(snips.chan==chan_list_sort(c),:)),ones(num_snips,1));
-        snips_array(:,c) = {double(snips.data(snips.chan==chan_list_sort(c),:))};
-        sort_code(:,c)   = {snips.sortcode(snips.chan==chan_list_sort(c),:)};
+        snips_array(:,c) = mat2cell(double(snips.data(snips.chan==chan_list_sort(c),:)),ones(num_snips,1));
+        sort_code(:,c)   = snips.sortcode(snips.chan==chan_list_sort(c),:);
     end
     
     matdata_array{b,1}.snips = struct(...
-        'timeframe'     ,timeframe,...
+        'timeframe'     ,snips.timeframe,...
         'snip_name'     ,snips_name,...
         'num_snips'     ,{num_snips},...
         'onsets'        ,{snip_onsets},...
         'chan_list'     ,{chan_list_sort},...
         'data'          ,{snips_array},...
         'fs'            ,snips.fs,...
-        'sortcode'      ,{sort_code} );
+        'sortcode'      ,sort_code );
         
 
 %% Streams
