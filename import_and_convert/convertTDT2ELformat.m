@@ -28,7 +28,6 @@ function matdata_array = convertTDT2ELformat(tdt_struct_array,varargin)
 %
 %%%% Ethierlab 2017/12/13 -- CE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 %% Params handling
 % defaults parameters
 params = struct('snip_offset'       ,0, ...
