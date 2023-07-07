@@ -107,9 +107,9 @@ function varargout = TDT_import(varargin)
 
    
         %name the structure the same as the file and save it.
-        %but modify name to make sure it starts with a letter
+        %but modify name to make sure it doesn't start with a number
         %and doesn't have the '-' character
-        block = ['m' strrep(block,'-','')];   
+        block = ['x' strrep(block,'-','')];   
         eval([block '= tdt_struct;']);
         
         % check if there is a mismatch between stim epocs onsets and snips ts
@@ -130,11 +130,11 @@ function varargout = TDT_import(varargin)
         matdata = parse_tdt_data(matdata,params.parse_params);
     end
     
-    if num_data_files > 1
+%     if num_data_files > 1
         save(fullfile(params.save_path,'all_data_combined'),'matdata','-v7.3');
-    else
-        matdata = matdata{1,1};
-    end
+%     else
+%         matdata = matdata{1,1};
+%     end
 
     varargout = {matdata, num_data_files, params.save_path};
 end

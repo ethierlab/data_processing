@@ -149,16 +149,21 @@ end
         emgtimebins = (0:numel(datatable{EMG_i(1),trial}{:})-1)/EMG_fs;
         for E=1:num_emgs
             % Filter EMG data
-            tempEMG = double(datatable{EMG_i(E),trial}{:});
-            tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+             tempEMG = double(datatable{EMG_i(E),trial}{:});
+%             tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+%             tempEMG = abs(tempEMG); %rectify
+%             tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
+            tempEMG = filter(bh,ah,tempEMG); %highpass filter
             tempEMG = abs(tempEMG); %rectify
-            tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
-            
+            tempEMG = filter(bl,al,tempEMG); %lowpass filter
+                          
+
+
             %downsample EMG data to desired bin size
             emg{trial,E} = interp1(emgtimebins, tempEMG, timeframe{trial},'linear','extrap')';
         end
     end
-    clear tempEMG emgtimebins E bh ah bl al EMGNormRatio;
+%     clear tempEMG emgtimebins E bh ah bl al EMGNormRatio;
     
     %% 3-Bin force data    
     if process_data_flag(strcmp(data_types,'force')) 
@@ -168,7 +173,7 @@ end
             force{trial,F} = interp1(forcetimebins, tempForce, timeframe{trial},'linear','extrap')';
         end
     end
-    clear tempForce forcetimebins F forceNormRatio;
+%     clear tempForce forcetimebins F forceNormRatio;
 
     %% 4-Bin spike data
             %todo: separate single vs multiunits
@@ -210,7 +215,7 @@ end
         end
 
     end
-    clear tempLFP LFPtimebins LFPNormRatio L;
+%     clear tempLFP LFPtimebins LFPNormRatio L;
 
     %% 6-Bin trial_success
     if process_data_flag(strcmp(data_types,'success'))

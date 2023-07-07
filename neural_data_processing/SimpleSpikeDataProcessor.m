@@ -121,7 +121,8 @@ if BLOCKPATH
         end
 %         stream_snip = heads.stores
 %         handles.store = stream_snip(handles.store);
-        set(handles.list_popup,'String',string(handles.store));
+        %set(handles.list_popup,'String',string(handles.store));
+        set(handles.list_popup,'String',handles.store);
     end
 end
 
@@ -340,6 +341,7 @@ handles.chan = handles.chanlist(idx-1);
 handles.stream_t0   = 0; % start at beginning of data (first 60 sec);
 
 handles = read_chan(handles);
+update_time_buttons(handles);
 
 % Update handles structure
 guidata(hObject, handles);   
@@ -352,16 +354,45 @@ save_chan(handles);
 idx = find(handles.chan == handles.chanlist);
 handles.chan = handles.chanlist(idx+1);
 handles.stream_t0   = 0; % start at beginning of data (first 60 sec);
+handles.prev60s_button.Enable = 'off';
 
 handles = read_chan(handles);
+update_time_buttons(handles);
 
 % Update handles structure
 guidata(hObject, handles);    
    
 function prev60s_button_Callback(hObject, eventdata, handles)
+handles.stream_t0   = handles.stream_t0-60;
+
+update_time_buttons(handles);
+update_stream(handles);
+
+% Update handles structure
+guidata(hObject, handles);  
+
 function next60s_button_Callback(hObject, eventdata, handles)
+   handles.stream_t0   = handles.stream_t0+60;
+
+update_time_buttons(handles);
+update_stream(handles);
+
+% Update handles structure
+guidata(hObject, handles);   
 
 %% Functions
+
+function update_time_buttons(handles)
+if handles.stream_t0 < 60
+    handles.prev60s_button.Enable = 'off';
+else
+    handles.prev60s_button.Enable = 'on';
+end
+if handles.stream_t0+60 > handles.stream_timeframe
+    handles.next60s_button.Enable = 'off';
+else
+    handles.next60s_button.Enable = 'on';
+end
 
 function update_stream(handles)
 
@@ -433,6 +464,10 @@ function handles = read_chan(handles)
 % read the specified data from our block into a Matlab structure
 handles.data = TDTbin2mat(handles.blockpath_edit.String, 'STORE', handles.list_choice, 'CHANNEL', handles.chan);
 
+if handles.data.streams.(handles.list_choice).fs <20000
+    %sampling frequency is not adequate
+    error('sampling frequency is too low (%.0f Hz)',handles.data.streams.(handles.list_choice).fs);
+end
 % filter data 300-5000 Hz
 handles.data = TDTdigitalfilter(handles.data, handles.list_choice, [300 5000]);
 
@@ -681,7 +716,8 @@ fprintf('Loading %s...\n', handles.list_choice)
 
 try
 handles = read_chan(handles);
-catch
+catch ME
+    warning(ME.message);
     warning('Failed to load %s. Select a different storage.\n', handles.list_choice)
     return
 end
